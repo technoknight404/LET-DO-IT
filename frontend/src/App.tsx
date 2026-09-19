@@ -119,8 +119,13 @@ export function App() {
             <div className="space-y-6">
               <ScanUpload
                 onScanComplete={handleScanCompleted}
+                onSelectDemo={(demo) => {
+                  setCurrentScan(demo);
+                  setActiveTab('analysis');
+                }}
                 lang={lang}
                 currentUser={currentUser}
+                demoScans={demoScans}
                 onRequireLogin={(notice) => openLogin(notice)}
                 onOfflineQueued={() => getPendingScansCount().then(setPendingSyncCount)}
               />

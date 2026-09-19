@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Camera, UploadCloud, AlertCircle, RefreshCw, Layers, CheckCircle2, X, ShieldCheck } from 'lucide-react';
+import { Camera, UploadCloud, AlertCircle, RefreshCw, Layers, CheckCircle2, X, ShieldCheck, Sparkles, Eye } from 'lucide-react';
 import { api } from '../utils/api';
 import { queueOfflineScan } from '../utils/offlineQueue';
 import { translations } from '../i18n/translations';
@@ -7,8 +7,10 @@ import { ScanResult, User } from '../types';
 
 interface ScanUploadProps {
   onScanComplete: (result: ScanResult) => void;
+  onSelectDemo?: (demo: ScanResult) => void;
   lang: 'en' | 'hi';
   currentUser?: User | null;
+  demoScans?: ScanResult[];
   onRequireLogin?: (notice?: string) => void;
   onOfflineQueued?: () => void;
 }
@@ -17,8 +19,10 @@ const GUEST_FREE_SCANS = 3;
 
 export const ScanUpload: React.FC<ScanUploadProps> = ({
   onScanComplete,
+  onSelectDemo,
   lang,
   currentUser,
+  demoScans = [],
   onRequireLogin,
   onOfflineQueued,
 }) => {
@@ -508,6 +512,70 @@ export const ScanUpload: React.FC<ScanUploadProps> = ({
                 <div className="text-[11px] truncate mt-0.5">{st.label}</div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Sample Inspections — Try Demo Scans */}
+      {demoScans.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#0E7490] to-[#12355B] flex items-center justify-center shadow-sm">
+              <Sparkles size={18} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-[#12355B]">
+                {lang === 'hi' ? 'डेमो स्कैन आज़माएं' : 'Try Demo Inspections'}
+              </h2>
+              <p className="text-[11px] text-slate-500">
+                {lang === 'hi'
+                  ? 'वास्तविक उत्पाद लेबल विश्लेषण कैसे काम करता है — किसी भी डेमो पर क्लिक करें'
+                  : 'See how real product label analysis works — click any demo to view the full report'}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {demoScans.map((demo) => {
+              const isComp = demo.verdict === 'COMPLIANT';
+              const isNonComp = demo.verdict === 'NON_COMPLIANT';
+              return (
+                <button
+                  key={demo.id}
+                  onClick={() => onSelectDemo?.(demo)}
+                  className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs hover:shadow-md hover:border-[#0E7490]/40 transition-all text-left flex flex-col justify-between space-y-2.5 group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        isComp ? 'bg-emerald-100 text-emerald-800'
+                        : isNonComp ? 'bg-rose-100 text-rose-800'
+                        : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {demo.verdict === 'COMPLIANT' ? (lang === 'hi' ? 'अनुपालित' : 'COMPLIANT')
+                        : demo.verdict === 'NON_COMPLIANT' ? (lang === 'hi' ? 'गैर-अनुपालित' : 'NON-COMPLIANT')
+                        : (lang === 'hi' ? 'समीक्षा आवश्यक' : 'NEEDS REVIEW')}
+                      </span>
+                      <span className="text-[9px] font-bold text-[#0E7490] bg-cyan-50 px-1.5 py-0.5 rounded">
+                        {demo.category?.toUpperCase()}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-xs text-[#12355B] leading-snug line-clamp-2">
+                      {demo.product?.name}
+                    </h3>
+                    <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                      {demo.product?.manufacturer_name}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <div className="flex gap-3 text-[10px]">
+                      <span className="font-bold text-slate-700">{demo.compliance_score.toFixed(0)}%</span>
+                      <span className="font-bold text-[#0E7490]">{demo.avg_ocr_confidence.toFixed(0)}% OCR</span>
+                    </div>
+                    <Eye size={14} className="text-slate-400 group-hover:text-[#0E7490] transition-colors" />
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
