@@ -120,22 +120,22 @@ async def create_scan(
     # 4. Process OCR on images
     all_ocr_items = []
     combined_metadata = {}
-    is_any_blurry = False
     blur_error_msg = None
 
     for img_path in saved_image_paths:
         try:
             items, meta = run_ocr(img_path, detect_blur=True)
-            if meta.get("blurry"):
-                is_any_blurry = True
+            if meta.get("blurry") and blur_error_msg is None:
                 blur_error_msg = meta.get("error")
             all_ocr_items.extend(items)
             combined_metadata = meta
         except Exception as e:
             print(f"[WARN] OCR failed for {img_path}: {e}")
 
-    # Blur / retry handling per §7.1
-    if is_any_blurry and len(all_ocr_items) < 5:
+    # Blur / retry handling per §7.1 — judge the SCAN as a whole, not per image.
+    # Reject only when OCR across ALL images found too few words to extract fields.
+    # (One soft photo in a multi-image scan must not sink a scan that read fine.)
+    if len(all_ocr_items) < 5:
         scan.status = ScanStatus.FAILED
         scan.verdict = Verdict.NEEDS_REVIEW
         scan.processing_time_ms = int((time.time() - start_time) * 1000)

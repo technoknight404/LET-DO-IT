@@ -12,9 +12,17 @@ import numpy as np
 from typing import Tuple, Optional, Dict, Any
 
 
-def is_image_blurry(image: np.ndarray, threshold: float = 80.0) -> Tuple[bool, float]:
+def is_image_blurry(image: np.ndarray, threshold: float = 30.0) -> Tuple[bool, float]:
     """Check if image is blurry using the variance of the Laplacian.
     Returns (is_blurry, variance_score).
+
+    Threshold guidance (Laplacian variance scales with resolution and texture):
+    - < 30  : almost certainly unusable (heavy motion blur / out of focus)
+    - 30-100: soft but usually OCR-able — do NOT reject on this alone
+    - > 100 : sharp
+
+    Per §7.1 the reject decision must combine blur with OCR word count, so
+    callers should treat this as advisory, not a hard gate.
     """
     if len(image.shape) == 3:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

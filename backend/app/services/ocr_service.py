@@ -132,15 +132,10 @@ def run_ocr(
     else:
         raise ValueError("Invalid image input type")
 
-    # Check blur
+    # Blur is ADVISORY per §7.1: never reject before OCR runs. A soft photo of a
+    # large-print label often still reads fine; a 'sharp' photo of tiny text may not.
+    # The final reject decision combines blur + OCR word count below.
     is_blurry, blur_score = is_image_blurry(image)
-    if detect_blur and is_blurry:
-        return [], {
-            "blurry": True,
-            "blur_score": blur_score,
-            "error": "We couldn't read this label clearly. Please move closer, hold steady, and retake the photo.",
-            "error_hi": "हम इस लेबल को स्पष्ट रूप से नहीं पढ़ सके। कृपया पास जाएं, फोन को स्थिर रखें और फिर से फोटो लें।"
-        }
 
     # Preprocess
     enhanced = preprocess_image_for_ocr(image)
@@ -168,6 +163,34 @@ def run_ocr(
                 continue
             if text and str(text).strip():
                 items.append(OCRItem(text=str(text), confidence=score, bbox=box))
+
+    # Retry with the un-enhanced original when enhancement hurts (e.g. low-contrast
+    # glossy labels where CLAHE amplifies glare) and the first pass read almost nothing.
+    if len(items) < 3:
+        try:
+            retry_results = engine(image)
+            retry_items = []
+            for entry in retry_results or []:
+                try:
+                    box, text, score = entry[0], entry[1], entry[2]
+                except (TypeError, IndexError):
+                    continue
+                if text and str(text).strip():
+                    retry_items.append(OCRItem(text=str(text), confidence=score, bbox=box))
+            if len(retry_items) > len(items):
+                items = retry_items
+        except Exception as e:
+            print(f"[WARN] OCR retry on original image failed: {e}")
+
+    # Blur/undreadable rejection per §7.1: only when OCR genuinely found too few
+    # words. A high blur score alone never rejects.
+    if detect_blur and len(items) < 5:
+        return [], {
+            "blurry": True,
+            "blur_score": blur_score,
+            "error": "We couldn't read this label clearly. Please move closer, hold steady, and retake the photo.",
+            "error_hi": "हम इस लेबल को स्पष्ट रूप से नहीं पढ़ सके। कृपया पास जाएं, फोन को स्थिर रखें और फिर से फोटो लें।"
+        }
 
     # Calculate confidence distribution for Recharts pie chart (§7.2)
     # Slices: High (≥90%), Medium (75–89%), Low (<75%), Not detected
