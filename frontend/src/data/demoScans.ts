@@ -48,6 +48,8 @@ export const demoScans: ScanResult[] = [
       { name: 'Low (<75%)', value: 0, fields: [], color: '#D97706' },
     ],
     disclaimer: 'Verify against the physical package before issuing any notice.',
+    image_url: '/sample-label.jpeg',
+    is_demo: true,
   },
 
   // ── 2. NON-COMPLIANT — Cooking Oil (Food) ──────────────────────────
@@ -101,6 +103,8 @@ export const demoScans: ScanResult[] = [
       { name: 'Low (<75%)', value: 0, fields: [], color: '#D97706' },
     ],
     disclaimer: 'Verify against the physical package before issuing any notice.',
+    image_url: '/sample-label.jpeg',
+    is_demo: true,
   },
 
   // ── 3. NEEDS REVIEW — Paint (Cosmetics/Paint) ──────────────────────
@@ -161,6 +165,8 @@ export const demoScans: ScanResult[] = [
       { name: 'Low (<75%)', value: 2, fields: ['Common Name', 'Month Year Mfg'], color: '#D97706' },
     ],
     disclaimer: 'Verify against the physical package before issuing any notice.',
+    image_url: '/sample-label.jpeg',
+    is_demo: true,
   },
 
   // ── 4. COMPLIANT — Toothpaste (Cosmetics/Toiletries) ──────────────
@@ -205,6 +211,8 @@ export const demoScans: ScanResult[] = [
       { name: 'Low (<75%)', value: 0, fields: [], color: '#D97706' },
     ],
     disclaimer: 'Verify against the physical package before issuing any notice.',
+    image_url: '/sample-label.jpeg',
+    is_demo: true,
   },
 
   // ── 5. NON-COMPLIANT — Mineral Water (Food, multiple violations) ──
@@ -282,6 +290,8 @@ export const demoScans: ScanResult[] = [
       { name: 'Low (<75%)', value: 2, fields: ['Month Year Mfg', 'Consumer Care'], color: '#D97706' },
     ],
     disclaimer: 'Verify against the physical package before issuing any notice.',
+    image_url: '/sample-label.jpeg',
+    is_demo: true,
   },
 
   // ── 6. NEEDS REVIEW — Cement (Building Materials, low OCR) ────────
@@ -350,6 +360,8 @@ export const demoScans: ScanResult[] = [
       { name: 'Low (<75%)', value: 3, fields: ['Manufacturer Address', 'Pin Code', 'Month Year Mfg'], color: '#D97706' },
     ],
     disclaimer: 'Verify against the physical package before issuing any notice.',
+    image_url: '/sample-label.jpeg',
+    is_demo: true,
   },
 
   // ── 7. NON-COMPLIANT — Instant Noodles (Food, non-standard pack) ──
@@ -402,5 +414,7 @@ export const demoScans: ScanResult[] = [
       { name: 'Low (<75%)', value: 0, fields: [], color: '#D97706' },
     ],
     disclaimer: 'Verify against the physical package before issuing any notice.',
+    image_url: '/sample-label.jpeg',
+    is_demo: true,
   },
 ];

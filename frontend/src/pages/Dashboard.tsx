@@ -9,11 +9,47 @@ interface DashboardProps {
   lang: 'en' | 'hi';
 }
 
+/** Sample analytics shown when the API is unreachable, derived from the 7 demo scans. */
+const DEMO_DASHBOARD_STATS: DashboardStats = {
+  scans_today: 0,
+  scans_this_week: 4,
+  scans_this_month: 7,
+  total_scans: 7,
+  average_ocr_confidence: 88.6,
+  verdict_breakdown: {
+    compliant: 2,
+    non_compliant: 3,
+    needs_review: 2,
+  },
+  top_violated_rules: [
+    { rule: 'Rule 5 Standard Pack Sizes', field: 'net_quantity', violations_count: 2 },
+    { rule: 'Rule 6(1)(e) MRP + Taxes', field: 'mrp', violations_count: 2 },
+    { rule: 'Rule 6(1)(d) Month & Year', field: 'mfg_date', violations_count: 2 },
+    { rule: 'Rule 6(2) Consumer Care', field: 'consumer_care', violations_count: 1 },
+    { rule: 'Rule 6(1)(b) Common Name', field: 'common_name', violations_count: 1 },
+    { rule: 'Rule 10(1) Address & PIN', field: 'pin_code', violations_count: 1 },
+  ],
+  top_non_compliant_manufacturers: [
+    { manufacturer: 'Parle Agro Pvt. Ltd.', violations_count: 4 },
+    { manufacturer: 'Nestle India Ltd.', violations_count: 1 },
+  ],
+  compliance_trend: [
+    { date: '13 Sep', compliant: 0, non_compliant: 0, needs_review: 1 },
+    { date: '14 Sep', compliant: 0, non_compliant: 1, needs_review: 0 },
+    { date: '15 Sep', compliant: 1, non_compliant: 0, needs_review: 0 },
+    { date: '16 Sep', compliant: 0, non_compliant: 1, needs_review: 0 },
+    { date: '17 Sep', compliant: 1, non_compliant: 0, needs_review: 0 },
+    { date: '18 Sep', compliant: 0, non_compliant: 0, needs_review: 1 },
+    { date: '19 Sep', compliant: 0, non_compliant: 0, needs_review: 0 },
+  ],
+};
+
 export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
   const t = translations[lang];
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [usingDemoData, setUsingDemoData] = useState(false);
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
@@ -21,9 +57,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
     try {
       const res = await api.get('/dashboard/stats');
       setStats(res.data);
+      setUsingDemoData(false);
     } catch (err) {
-      console.error('Failed to load dashboard stats:', err);
-      setLoadError('Inspection analytics could not be loaded. Check the service connection and try again.');
+      console.warn('Dashboard API unavailable — showing sample analytics.', err);
+      setStats(DEMO_DASHBOARD_STATS);
+      setUsingDemoData(true);
     } finally {
       setLoading(false);
     }
@@ -48,6 +86,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
       </div>
 
       {loadError && <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{loadError}</div>}
+
+      {usingDemoData && !loading && (
+        <div className="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-xs text-cyan-900 flex items-start gap-2">
+          <DatabaseZap size={15} className="text-[#0E7490] shrink-0 mt-0.5" />
+          <span>
+            Showing <strong>sample analytics</strong> — the API service is not connected in this environment. Run real scans once the backend is live to see live data here.
+          </span>
+        </div>
+      )}
 
       {/* 4 Stat Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

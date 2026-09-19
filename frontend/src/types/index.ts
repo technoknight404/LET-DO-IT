@@ -66,6 +66,8 @@ export interface ScanResult {
   violations: ViolationItem[];
   confidence_pie: PieSlice[];
   disclaimer: string;
+  image_url?: string;
+  is_demo?: boolean;
 }
 
 export interface RuleItem {

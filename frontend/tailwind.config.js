@@ -57,6 +57,10 @@ export default {
         '3xl': '1.5rem',
       },
       keyframes: {
+        'scanline': {
+          '0%, 100%': { top: '10%' },
+          '50%': { top: '90%' },
+        },
         'fade-in': {
           '0%': { opacity: '0', transform: 'translateY(6px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
@@ -79,6 +83,7 @@ export default {
         },
       },
       animation: {
+        'scanline': 'scanline 1.2s ease-in-out infinite',
         'fade-in': 'fade-in 0.25s ease-out both',
         'fade-in-up': 'fade-in-up 0.35s ease-out both',
         'slide-in-right': 'slide-in-right 0.3s ease-out both',

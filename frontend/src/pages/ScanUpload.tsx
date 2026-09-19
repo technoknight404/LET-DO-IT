@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Camera, UploadCloud, AlertCircle, RefreshCw, Layers, CheckCircle2, X, ShieldCheck, Sparkles, Eye } from 'lucide-react';
+import { Camera, UploadCloud, AlertCircle, RefreshCw, Layers, CheckCircle2, X, ShieldCheck, Sparkles } from 'lucide-react';
 import { api } from '../utils/api';
 import { queueOfflineScan } from '../utils/offlineQueue';
 import { translations } from '../i18n/translations';
@@ -35,6 +35,7 @@ export const ScanUpload: React.FC<ScanUploadProps> = ({
   const [loading, setLoading] = useState(false);
   const [activeStep, setActiveStep] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [simulatingDemoId, setSimulatingDemoId] = useState<string | null>(null);
 
   // Optional dimensions for Rule 7(2) letter height check
   const [pdpHeight, setPdpHeight] = useState<string>('');
@@ -194,6 +195,26 @@ export const ScanUpload: React.FC<ScanUploadProps> = ({
 
     setSelectedFiles((prev) => [...prev, ...newFiles]);
     setPreviewUrls((prev) => [...prev, ...newPreviews]);
+  };
+
+  // Simulated demo scan — walks the same pipeline steps as a real upload
+  const handleDemoClick = (demo: ScanResult) => {
+    if (simulatingDemoId) return;
+    setSimulatingDemoId(demo.id);
+    setErrorMessage(null);
+    setActiveStep(1);
+    const timers = [
+      setTimeout(() => setActiveStep(2), 500),
+      setTimeout(() => setActiveStep(3), 1000),
+      setTimeout(() => setActiveStep(4), 1600),
+      setTimeout(() => {
+        setSimulatingDemoId(null);
+        setActiveStep(0);
+        onSelectDemo?.(demo);
+      }, 2100),
+    ];
+    // Cleanup on unmount
+    return () => timers.forEach(clearTimeout);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -538,40 +559,72 @@ export const ScanUpload: React.FC<ScanUploadProps> = ({
             {demoScans.map((demo) => {
               const isComp = demo.verdict === 'COMPLIANT';
               const isNonComp = demo.verdict === 'NON_COMPLIANT';
+              const isSimulating = simulatingDemoId === demo.id;
               return (
                 <button
                   key={demo.id}
-                  onClick={() => onSelectDemo?.(demo)}
-                  className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs hover:shadow-md hover:border-[#0E7490]/40 transition-all text-left flex flex-col justify-between space-y-2.5 group"
+                  disabled={simulatingDemoId !== null}
+                  onClick={() => handleDemoClick(demo)}
+                  className="bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-[#0E7490]/40 transition-all text-left flex flex-col overflow-hidden group disabled:opacity-60 disabled:cursor-wait"
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        isComp ? 'bg-emerald-100 text-emerald-800'
-                        : isNonComp ? 'bg-rose-100 text-rose-800'
-                        : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {demo.verdict === 'COMPLIANT' ? (lang === 'hi' ? 'अनुपालित' : 'COMPLIANT')
-                        : demo.verdict === 'NON_COMPLIANT' ? (lang === 'hi' ? 'गैर-अनुपालित' : 'NON-COMPLIANT')
-                        : (lang === 'hi' ? 'समीक्षा आवश्यक' : 'NEEDS REVIEW')}
-                      </span>
-                      <span className="text-[9px] font-bold text-[#0E7490] bg-cyan-50 px-1.5 py-0.5 rounded">
-                        {demo.category?.toUpperCase()}
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-xs text-[#12355B] leading-snug line-clamp-2">
-                      {demo.product?.name}
-                    </h3>
-                    <p className="text-[10px] text-slate-500 truncate mt-0.5">
-                      {demo.product?.manufacturer_name}
-                    </p>
+                  {/* Product label thumbnail with camera-style framing */}
+                  <div className="relative h-28 bg-slate-100 overflow-hidden">
+                    <img
+                      src={demo.image_url || '/sample-label.jpeg'}
+                      alt={demo.product?.name || 'Sample label'}
+                      className={`h-full w-full object-cover transition-transform duration-300 ${
+                        isSimulating ? 'scale-110 blur-[1px]' : 'group-hover:scale-105'
+                      }`}
+                    />
+                    {/* Scan-line animation while simulating */}
+                    {isSimulating && (
+                      <div className="absolute inset-0 overflow-hidden">
+                        <div className="absolute left-0 right-0 h-0.5 bg-[#0E7490] shadow-[0_0_12px_#0E7490] animate-[scanline_1.2s_ease-in-out_infinite]" />
+                      </div>
+                    )}
+                    {/* Verdict badge overlaid on image */}
+                    <span className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold shadow-sm ${
+                      isComp ? 'bg-emerald-500 text-white'
+                      : isNonComp ? 'bg-rose-500 text-white'
+                      : 'bg-amber-500 text-white'
+                    }`}>
+                      {demo.verdict === 'COMPLIANT' ? (lang === 'hi' ? 'अनुपालित' : 'COMPLIANT')
+                      : demo.verdict === 'NON_COMPLIANT' ? (lang === 'hi' ? 'गैर-अनुपालित' : 'NON-COMPLIANT')
+                      : (lang === 'hi' ? 'समीक्षा आवश्यक' : 'NEEDS REVIEW')}
+                    </span>
+                    <span className="absolute top-2 right-2 text-[9px] font-bold text-white bg-[#12355B]/80 px-1.5 py-0.5 rounded">
+                      {demo.category?.toUpperCase()}
+                    </span>
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                    <div className="flex gap-3 text-[10px]">
-                      <span className="font-bold text-slate-700">{demo.compliance_score.toFixed(0)}%</span>
-                      <span className="font-bold text-[#0E7490]">{demo.avg_ocr_confidence.toFixed(0)}% OCR</span>
+
+                  <div className="p-3.5 flex flex-col justify-between flex-1 space-y-2">
+                    <div>
+                      <h3 className="font-bold text-xs text-[#12355B] leading-snug line-clamp-2">
+                        {demo.product?.name}
+                      </h3>
+                      <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                        {demo.product?.manufacturer_name}
+                      </p>
                     </div>
-                    <Eye size={14} className="text-slate-400 group-hover:text-[#0E7490] transition-colors" />
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                      {isSimulating ? (
+                        <span className="text-[10px] font-bold text-[#0E7490] flex items-center gap-1.5">
+                          <RefreshCw size={11} className="animate-spin" />
+                          {lang === 'hi' ? 'स्कैन हो रहा है...' : 'Scanning label...'}
+                        </span>
+                      ) : (
+                        <>
+                          <div className="flex gap-2.5 text-[10px]">
+                            <span className="font-bold text-slate-700">{demo.compliance_score.toFixed(0)}%</span>
+                            <span className="font-bold text-[#0E7490]">{demo.avg_ocr_confidence.toFixed(0)}% OCR</span>
+                          </div>
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-[#0E7490]">
+                            <UploadCloud size={12} />
+                            {lang === 'hi' ? 'स्कैन करें' : 'Scan it'}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </button>
               );
