@@ -29,8 +29,10 @@ class RegisterRequest(BaseModel):
     @field_validator("mobile")
     @classmethod
     def validate_mobile(cls, v):
-        if v and not re.match(r"^[6-9]\d{9}$", v):
-            raise ValueError("Invalid Indian mobile number (10 digits, starts 6-9)")
+        # Accept international formats: optional leading +, 8-15 digits,
+        # with spaces or dashes as separators (E.164-ish, country-agnostic).
+        if v and not re.match(r"^\+?[\d\s-]{8,15}$", v):
+            raise ValueError("Invalid mobile number (8-15 digits, optional leading +)")
         return v
 
     @field_validator("password")

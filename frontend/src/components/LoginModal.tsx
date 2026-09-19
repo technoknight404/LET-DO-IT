@@ -88,11 +88,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     reset();
 
     if (!regEmail && !regMobile) {
-      setError('Please provide either an email address or a 10-digit mobile number.');
+      setError('Please provide either an email address or a mobile number.');
       return;
     }
-    if (regMobile && !/^[6-9]\d{9}$/.test(regMobile)) {
-      setError('Mobile number must be 10 digits and start with 6, 7, 8, or 9.');
+    if (regEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(regEmail.trim())) {
+      setError('Please enter a valid email address (e.g. name@example.com).');
+      return;
+    }
+    if (regMobile && regMobile.replace(/\D/g, '').length < 8) {
+      setError('Mobile number must contain at least 8 digits.');
+      return;
+    }
+    if (regMobile && !/^[+]?[\d\s-]{8,15}$/.test(regMobile)) {
+      setError('Mobile number can contain digits, spaces, dashes, and an optional leading +.');
       return;
     }
     if (regPassword.length < 8) {
@@ -228,6 +236,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   <User size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
                   <input
                     type="text"
+                    inputMode="email"
+                    autoComplete="username"
                     required
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
@@ -319,10 +329,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 <div className="relative">
                   <User size={15} className="absolute left-3 top-3 text-slate-400" />
                   <input
-                    type="email"
+                    type="text"
+                    inputMode="email"
+                    autoComplete="email"
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
-                    placeholder={lang === 'hi' ? 'inspector@dept.gov.in' : 'inspector@dept.gov.in'}
+                    placeholder="name@example.com"
                     className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-[#0E7490] outline-none min-h-[44px]"
                   />
                 </div>
@@ -331,15 +343,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               {/* Mobile */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  {lang === 'hi' ? '10 अंकों का मोबाइल' : '10-digit Mobile Number'}
+                  {lang === 'hi' ? 'मोबाइल नंबर' : 'Mobile Number'}
                 </label>
                 <div className="relative">
                   <Phone size={15} className="absolute left-3 top-3 text-slate-400" />
                   <input
                     type="tel"
+                    inputMode="tel"
                     value={regMobile}
-                    onChange={(e) => setRegMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    placeholder="9876543210"
+                    onChange={(e) => setRegMobile(e.target.value.replace(/[^\d+\s-]/g, '').slice(0, 16))}
+                    placeholder="+91 98765 43210"
                     className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-[#0E7490] outline-none min-h-[44px]"
                   />
                 </div>
