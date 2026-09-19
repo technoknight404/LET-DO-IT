@@ -129,6 +129,11 @@ export const translations = {
     sendReportAction: "Send Official Report Email",
     sending: "Sending...",
     sentSuccess: "Report successfully emailed to authority!",
+    sampleInspections: "Sample Inspections",
+    sampleInspectionsDesc: "See how label compliance analysis works — click any sample to explore the full report",
+    yourScanHistory: "Your Scan History",
+    yourScanHistoryDesc: "Complete log of your label processing attempts, OCR latency, and confidence scores",
+    noScansRecorded: "No label scans recorded yet. Use the Scan/Upload page to run an automated check.",
     helpDrawerTitle: "Legal Metrology Inspector Guide"
   },
   hi: {
@@ -261,6 +266,11 @@ export const translations = {
     sendReportAction: "आधिकारिक रिपोर्ट ईमेल भेजें",
     sending: "ईमेल भेजा जा रहा है...",
     sentSuccess: "रिपोर्ट सफलतापूर्वक प्राधिकारी को ईमेल कर दी गई है!",
+    sampleInspections: "नमूना निरीक्षण",
+    sampleInspectionsDesc: "लेबल अनुपालन विश्लेषण कैसे काम करता है, इसके उदाहरण देखें",
+    yourScanHistory: "आपका स्कैन इतिहास",
+    yourScanHistoryDesc: "आपके द्वारा चलाए गए स्कैन का पूरा लॉग",
+    noScansRecorded: "अभी तक कोई स्कैन रिकॉर्ड नहीं हुआ है। स्कैन/अपलोड पेज पर जाकर एक जांच शुरू करें।",
     helpDrawerTitle: "विधिक माप विज्ञान निरीक्षक मार्गदर्शिका"
   }
 };

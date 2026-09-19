@@ -17,6 +17,7 @@ import { ScanResult, User } from './types';
 import { api } from './utils/api';
 import { getPendingScansCount } from './utils/offlineQueue';
 import { translations } from './i18n/translations';
+import { demoScans } from './data/demoScans';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('scan');
@@ -68,7 +69,7 @@ export function App() {
     };
     window.addEventListener('cmd_trigger_login', handleTriggerLogin);
     return () => window.removeEventListener('cmd_trigger_login', handleTriggerLogin);
-  }, [getPendingScansCount, openLogin, t.guestLimitReached]);
+  }, [openLogin, t.guestLimitReached]);
 
   const handleToggleLang = () => {
     const next = lang === 'en' ? 'hi' : 'en';
@@ -95,8 +96,6 @@ export function App() {
     setActiveTab('rulebook');
   };
 
-  const guestScanCount = getGuestScanCount();
-
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#172033] flex flex-col font-sans">
       {/* Top Header per §4 */}
@@ -104,7 +103,6 @@ export function App() {
         lang={lang}
         onToggleLang={handleToggleLang}
         currentUser={currentUser}
-        guestScanCount={guestScanCount}
         onOpenLogin={() => openLogin()}
         onLogout={handleLogout}
         onOpenHelp={() => setHelpDrawerOpen(true)}
@@ -123,7 +121,6 @@ export function App() {
                 onScanComplete={handleScanCompleted}
                 lang={lang}
                 currentUser={currentUser}
-                guestScanCount={guestScanCount}
                 onRequireLogin={(notice) => openLogin(notice)}
                 onOfflineQueued={() => getPendingScansCount().then(setPendingSyncCount)}
               />
@@ -192,6 +189,7 @@ export function App() {
                 setCurrentScan(s);
                 setActiveTab('analysis');
               }}
+              demoScans={demoScans}
               lang={lang}
             />
           )}

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Camera, UploadCloud, AlertCircle, RefreshCw, Layers, CheckCircle2, X, ShieldCheck, LogIn } from 'lucide-react';
+import { Camera, UploadCloud, AlertCircle, RefreshCw, Layers, CheckCircle2, X, ShieldCheck } from 'lucide-react';
 import { api } from '../utils/api';
 import { queueOfflineScan } from '../utils/offlineQueue';
 import { translations } from '../i18n/translations';
@@ -9,7 +9,6 @@ interface ScanUploadProps {
   onScanComplete: (result: ScanResult) => void;
   lang: 'en' | 'hi';
   currentUser?: User | null;
-  guestScanCount?: number;
   onRequireLogin?: (notice?: string) => void;
   onOfflineQueued?: () => void;
 }
@@ -20,10 +19,10 @@ export const ScanUpload: React.FC<ScanUploadProps> = ({
   onScanComplete,
   lang,
   currentUser,
-  guestScanCount = 0,
   onRequireLogin,
   onOfflineQueued,
 }) => {
+  const guestScanCount = parseInt(localStorage.getItem('cmd_guest_scans') || '0', 10) || 0;
   const t = translations[lang];
   const [category, setCategory] = useState('food');
   const [packageType, setPackageType] = useState('retail');
@@ -50,14 +49,33 @@ export const ScanUpload: React.FC<ScanUploadProps> = ({
     setErrorMessage(null);
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        }
       });
+      // Apply advanced camera features if the device supports them
+      const videoTrack = mediaStream.getVideoTracks()[0];
+      if (videoTrack && typeof videoTrack.getCapabilities === 'function') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const caps: any = videoTrack.getCapabilities();
+        const advanced: Record<string, unknown> = {};
+        if (caps.focusMode?.includes('continuous')) advanced.focusMode = 'continuous';
+        if (caps.exposureMode?.includes('continuous')) advanced.exposureMode = 'continuous';
+        if (caps.whiteBalanceMode?.includes('continuous')) advanced.whiteBalanceMode = 'continuous';
+        if (Object.keys(advanced).length > 0) {
+          videoTrack.applyConstraints({ advanced: [advanced] }).catch(() => {});
+        }
+      }
       setStream(mediaStream);
       setShowWebcam(true);
     } catch (err: any) {
       console.warn("Environment camera failed, falling back to default", err);
       try {
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
         setStream(fallbackStream);
         setShowWebcam(true);
       } catch (err2: any) {
@@ -91,7 +109,7 @@ export const ScanUpload: React.FC<ScanUploadProps> = ({
           handleFilesChosen(dt.files);
           stopWebcam();
         }
-      }, 'image/jpeg', 0.85);
+      }, 'image/jpeg', 0.92);
     }
   };
 
@@ -144,9 +162,7 @@ export const ScanUpload: React.FC<ScanUploadProps> = ({
             } else {
               resolve(file);
             }
-          },
-          'image/jpeg',
-          0.85
+          },          'image/jpeg', 0.92
         );
       };
 
@@ -275,16 +291,6 @@ export const ScanUpload: React.FC<ScanUploadProps> = ({
             <ShieldCheck size={16} />
             <span>Evidence-led assessment</span>
           </div>
-          {!currentUser && (
-            <div className="flex items-center justify-center gap-2 px-3.5 py-2 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold">
-              <LogIn size={15} />
-              <span>
-                {lang === 'hi'
-                  ? `अतिथि मोड (स्कैन ${Math.min(guestScanCount + 1, GUEST_FREE_SCANS)}/${GUEST_FREE_SCANS})`
-                  : `Guest Mode (Scan ${Math.min(guestScanCount + 1, GUEST_FREE_SCANS)}/${GUEST_FREE_SCANS})`}
-              </span>
-            </div>
-          )}
         </div>
       </div>
 
@@ -300,7 +306,7 @@ export const ScanUpload: React.FC<ScanUploadProps> = ({
 
       {/* Upload Methods (Side by Side per §7.1) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* 1. Camera Capture Button */}
+        {/* 1. Camera Capture Button — HD capture for OCR clarity */}
         <div
           onClick={startWebcam}
           className="bg-white hover:bg-cyan-50/40 border-2 border-dashed border-[#0E7490]/40 hover:border-[#0E7490] rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all group min-h-[220px] shadow-sm focus-within:ring-2 focus-within:ring-[#0E7490]"
@@ -320,6 +326,9 @@ export const ScanUpload: React.FC<ScanUploadProps> = ({
           <p className="text-xs text-slate-500 text-center mt-1 max-w-xs">
             {t.cameraDesc}
           </p>
+          <span className="text-[10px] font-semibold text-[#0E7490] bg-cyan-50 px-2 py-0.5 rounded-md mt-2">
+            HD Capture · Auto Focus · Best for OCR
+          </span>
         </div>
 
         {/* 2. Gallery / File Upload (Drag & Drop) */}
@@ -344,6 +353,9 @@ export const ScanUpload: React.FC<ScanUploadProps> = ({
           <p className="text-xs text-slate-500 text-center mt-1 max-w-xs">
             {t.dragDropText}
           </p>
+          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md mt-2">
+            JPG · PNG · WEBP up to 10 MB
+          </span>
         </div>
       </div>
 
@@ -459,12 +471,8 @@ export const ScanUpload: React.FC<ScanUploadProps> = ({
               <RefreshCw size={18} className="animate-spin text-cyan-400" />
               <span>{t.analyzing}</span>
             </>
-          ) : !currentUser && guestScanCount >= GUEST_FREE_SCANS ? (
-            <>
-              <LogIn size={18} />
-              <span>{lang === 'hi' ? 'साइन इन करें और स्कैन जारी रखें' : 'Sign in to continue scanning'}</span>
-            </>
           ) : (
+          
             <>
               <CheckCircle2 size={18} />
               <span>{t.startScan}</span>

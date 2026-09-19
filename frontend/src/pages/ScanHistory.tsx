@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Clock, Eye } from 'lucide-react';
+import { Clock, Eye, Sparkles } from 'lucide-react';
 import { api } from '../utils/api';
 import { translations } from '../i18n/translations';
 import { ScanResult } from '../types';
 
 interface ScanHistoryProps {
   onSelectScan: (scan: ScanResult) => void;
+  demoScans?: ScanResult[];
   lang: 'en' | 'hi';
 }
 
-export const ScanHistory: React.FC<ScanHistoryProps> = ({ onSelectScan, lang }) => {
+export const ScanHistory: React.FC<ScanHistoryProps> = ({ onSelectScan, demoScans = [], lang }) => {
   const t = translations[lang];
   const [scans, setScans] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -54,12 +55,95 @@ export const ScanHistory: React.FC<ScanHistoryProps> = ({ onSelectScan, lang }) 
         </p>
       </div>
 
+      {/* Sample Inspections — shown for all users as reference examples */}
+      {demoScans.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-cyan-50 flex items-center justify-center">
+              <Sparkles size={16} className="text-[#0E7490]" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-[#12355B]">
+                {lang === 'hi' ? 'नमूना निरीक्षण' : 'Sample Inspections'}
+              </h2>
+              <p className="text-[11px] text-slate-500">
+                {lang === 'hi'
+                  ? 'लेबल अनुपालन विश्लेषण कैसे काम करता है, इसके उदाहरण देखें'
+                  : 'See how label compliance analysis works — click any sample to explore the full report'}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {demoScans.map((demo) => {
+              const isComp = demo.verdict === 'COMPLIANT';
+              const isNonComp = demo.verdict === 'NON_COMPLIANT';
+              return (
+                <div
+                  key={demo.id}
+                  onClick={() => onSelectScan(demo)}
+                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-md hover:border-[#0E7490]/40 transition-all cursor-pointer flex flex-col justify-between space-y-3 group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        isComp ? 'bg-emerald-100 text-emerald-800'
+                        : isNonComp ? 'bg-rose-100 text-rose-800'
+                        : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {demo.verdict === 'COMPLIANT' ? (lang === 'hi' ? 'अनुपालित' : 'COMPLIANT')
+                        : demo.verdict === 'NON_COMPLIANT' ? (lang === 'hi' ? 'गैर-अनुपालित' : 'NON-COMPLIANT')
+                        : (lang === 'hi' ? 'समीक्षा आवश्यक' : 'NEEDS REVIEW')}
+                      </span>
+                      <span className="text-[10px] font-bold text-[#0E7490] bg-cyan-50 px-1.5 py-0.5 rounded">
+                        {demo.category?.toUpperCase()}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-sm text-[#12355B] truncate">
+                      {demo.product?.name}
+                    </h3>
+                    <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                      {demo.product?.manufacturer_name}
+                    </p>
+                  </div>
+                  <div className="pt-2.5 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-bold">
+                        {lang === 'hi' ? 'अनुपालन' : 'Score'}
+                      </span>
+                      <div className="font-bold text-slate-800">{demo.compliance_score.toFixed(0)}%</div>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-bold">OCR</span>
+                      <div className="font-bold text-[#0E7490]">{demo.avg_ocr_confidence.toFixed(0)}%</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Your Scan History */}
+      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+        <h2 className="text-sm font-bold text-[#12355B] uppercase tracking-wider mb-1">
+          {lang === 'hi' ? 'आपका स्कैन इतिहास' : 'Your Scan History'}
+        </h2>
+        <p className="text-[11px] text-slate-500">
+          {lang === 'hi'
+            ? 'आपके द्वारा चलाए गए स्कैन का पूरा लॉग'
+            : 'Complete log of your label processing attempts, OCR latency, and confidence scores'}
+        </p>
+      </div>
+
       {/* Scans Grid */}
       {loading ? (
         <div className="text-center py-16 text-xs text-slate-400">Loading scan history...</div>
       ) : scans.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 text-slate-400 text-xs">
-          No label scans recorded yet. Use the Scan/Upload page to run an automated check.
+          {lang === 'hi'
+            ? 'अभी तक कोई स्कैन रिकॉर्ड नहीं हुआ है। स्कैन/अपलोड पेज पर जाकर एक जांच शुरू करें।'
+            : 'No label scans recorded yet. Use the Scan/Upload page to run an automated check.'}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
